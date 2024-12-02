@@ -2,7 +2,7 @@
 
 #include <animaVectorOperations.h>
 
-#include "animaODFEstimatorImageFilter.h"
+#include "animaODFEstimatorCSDImageFilter.h"
 #include <animaODFSphericalHarmonicBasis.h>
 
 #include <itkImageRegionConstIterator.h>

@@ -1,5 +1,5 @@
 #include <animaGradientFileReader.h>
-#include <animaODFEstimatorImageFilter.h>
+#include <animaODFEstimatorCSDImageFilter.h>
 #include <animaReadWriteFunctions.h>
 
 #include <itkTimeProbe.h>
