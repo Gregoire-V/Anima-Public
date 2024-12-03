@@ -13,6 +13,22 @@
 #include <cmath>
 #include <fstream>
 
+
+bool isZero(std::vector<double> &testVal)
+{
+    bool resVal = true;
+    for (unsigned int i = 0; i < testVal.size(); ++i)
+    {
+        if (testVal[i] != 0)
+        {
+            resVal = false;
+            break;
+        }
+    }
+
+    return resVal;
+}
+
 namespace anima
 {
 

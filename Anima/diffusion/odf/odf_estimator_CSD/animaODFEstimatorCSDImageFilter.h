@@ -18,7 +18,7 @@ namespace anima
         typedef ODFEstimatorImageFilter Self;
         typedef itk::Image<TInputPixelType, 3> TInputImage;
         typedef itk::Image<TInputPixelType, 4> Image4DType;
-        typedef itk::Image<TOutputPixelType, 3> OutputScalarImageType;
+        //typedef itk::Image<TOutputPixelType, 3> OutputScalarImageType;
         typedef itk::VectorImage<TOutputPixelType, 3> TOutputImage;
         typedef itk::ImageToImageFilter<TInputImage, TOutputImage> Superclass;
         typedef itk::SmartPointer<Self> Pointer;
@@ -32,7 +32,7 @@ namespace anima
 
         typedef typename TInputImage::Pointer InputImagePointer;
         typedef typename TOutputImage::Pointer OutputImagePointer;
-        typedef typename OutputScalarImageType::Pointer OutputScalarImagePointer;
+        //typedef typename OutputScalarImageType::Pointer OutputScalarImagePointer;
 
         /** Superclass typedefs. */
         typedef typename Superclass::OutputImageRegionType OutputImageRegionType;
@@ -42,24 +42,9 @@ namespace anima
         itkSetMacro(BValueShellSelected, int);
 
         itkSetMacro(Lambda, double);
+        itkSetMacro(Tau, double);
         itkSetMacro(LOrder, unsigned int);
 
-        itkSetMacro(SharpnessRatio, double);
-        itkSetMacro(Sharpen, bool);
-
-        itkSetMacro(Normalize, bool);
-        itkSetMacro(FileNameSphereTesselation, std::string);
-
-        itkSetMacro(UseAganjEstimation, bool);
-        itkSetMacro(DeltaAganjRegularization, double);
-
-        itkGetMacro(EstimatedB0Image, OutputScalarImageType *);
-        itkGetMacro(EstimatedVarianceImage, OutputScalarImageType *);
-
-        void SetReferenceB0Image(TInputImage *refB0)
-        {
-            m_ReferenceB0Image = refB0;
-        }
 
     protected:
         ODFEstimatorImageFilter()
@@ -71,43 +56,20 @@ namespace anima
             m_BValueShellSelected = -1;
             m_BValueShellTolerance = 20;
 
-            m_Lambda = 0.006;
-            m_DeltaAganjRegularization = 0.001;
+            m_Lambda = 1;
+            m_LOrder = 8;
 
-            m_LOrder = 4;
-
-            m_Sharpen = false;
-            m_SharpnessRatio = 0.255;
-
-            m_Normalize = false;
             m_SphereSHSampling.clear();
-
-            m_UseAganjEstimation = false;
         }
 
         virtual ~ODFEstimatorImageFilter() {}
 
-        void GenerateOutputInformation() ITK_OVERRIDE;
-        void BeforeThreadedGenerateData() ITK_OVERRIDE;
-        void DynamicThreadedGenerateData(const OutputImageRegionType &outputRegionForThread) ITK_OVERRIDE;
+        void GenerateOutputInformation() override;
+        void BeforeThreadedGenerateData() override;
+        void DynamicThreadedGenerateData(const OutputImageRegionType &outputRegionForThread) override;
 
     private:
         ITK_DISALLOW_COPY_AND_ASSIGN(ODFEstimatorImageFilter);
-
-        bool isZero(std::vector<double> &testVal)
-        {
-            bool resVal = true;
-            for (unsigned int i = 0; i < testVal.size(); ++i)
-            {
-                if (testVal[i] != 0)
-                {
-                    resVal = false;
-                    break;
-                }
-            }
-
-            return resVal;
-        }
 
         std::vector<std::vector<double>> m_GradientDirections;
         std::vector<double> m_BValuesList;
@@ -141,4 +103,4 @@ namespace anima
 
 } // end of namespace anima
 
-#include "animaODFEstimatorImageFilter.hxx"
+#include "animaODFEstimatorCSDImageFilter.hxx"
