@@ -16,10 +16,10 @@ namespace anima
     public:
         /** Standard class typedefs. */
         typedef ODFEstimatorImageFilter Self;
-        typedef itk::Image<TInputPixelType, 3> TInputImage;
-        typedef itk::Image<TInputPixelType, 4> Image4DType;
+        typedef itk::Image<TInputPixelType, 3> Input3DImageType;
+        typedef itk::Image<TInputPixelType, 4> Input4DImageType;
         //typedef itk::Image<TOutputPixelType, 3> OutputScalarImageType;
-        typedef itk::VectorImage<TOutputPixelType, 3> TOutputImage;
+        typedef itk::VectorImage<TOutputPixelType, 3> OutputVectorImageType;
         typedef itk::ImageToImageFilter<TInputImage, TOutputImage> Superclass;
         typedef itk::SmartPointer<Self> Pointer;
         typedef itk::SmartPointer<const Self> ConstPointer;
@@ -30,8 +30,8 @@ namespace anima
         /** Run-time type information (and related methods) */
         itkTypeMacro(ODFEstimatorImageFilter, ImageToImageFilter);
 
-        typedef typename TInputImage::Pointer InputImagePointer;
-        typedef typename TOutputImage::Pointer OutputImagePointer;
+        typedef typename Input3DImageType::Pointer InputImagePointer;
+        typedef typename OutputVectorImageType::Pointer OutputImagePointer;
         //typedef typename OutputScalarImageType::Pointer OutputScalarImagePointer;
 
         /** Superclass typedefs. */
@@ -94,10 +94,7 @@ namespace anima
         std::vector<std::vector<double>> m_SphereSHSampling;
 
         double m_Lambda;
-        double m_SharpnessRatio; // See Descoteaux et al. TMI 2009, article plus appendix
-        bool m_Sharpen;
-        bool m_UseAganjEstimation;
-        double m_DeltaAganjRegularization;
+        double m_Tau
         unsigned int m_LOrder;
     };
 

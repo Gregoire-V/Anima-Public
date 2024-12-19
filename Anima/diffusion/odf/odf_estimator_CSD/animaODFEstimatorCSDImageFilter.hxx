@@ -39,14 +39,15 @@ namespace anima
         if (isZero(grad))
         {
             m_B0Indexes.push_back(i);
-            return;
         }
+        else
+        {
+            m_GradientIndexes.push_back(i);
 
-        m_GradientIndexes.push_back(i);
-
-        std::vector<double> sphericalCoords;
-        anima::TransformCartesianToSphericalCoordinates(grad, sphericalCoords);
-        m_GradientDirections.push_back(sphericalCoords);
+            std::vector<double> sphericalCoords;
+            anima::TransformCartesianToSphericalCoordinates(grad, sphericalCoords);
+            m_GradientDirections.push_back(sphericalCoords);
+        }
     }
 
     template <typename TInputPixelType, typename TOutputPixelType>
@@ -59,7 +60,7 @@ namespace anima
         this->Superclass::GenerateOutputInformation();
 
         unsigned int vectorLength = (m_LOrder + 1) * (m_LOrder + 2) / 2;
-        TOutputImage *output = this->GetOutput();
+        OutputVectorImageType *output = this->GetOutput();
         output->SetVectorLength(vectorLength);
     }
 

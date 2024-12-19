@@ -31,7 +31,7 @@ int main(int argc, char **argv)
         "Lambda regularization parameter (see Tournier CSD 2006)",
         false, 1, "lambda for regularization (real value)", cmd);
     TCLAP::ValueArg<double> tauArg(
-        "-t", "tau",
+        "t", "tau",
         "Tau parameter (see Tournier CSD 2006)",
         false, 0.006, "tau parameter (real value)", cmd);
     TCLAP::ValueArg<unsigned int> orderArg(
