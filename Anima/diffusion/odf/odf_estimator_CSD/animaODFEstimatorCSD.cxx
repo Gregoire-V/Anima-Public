@@ -1,4 +1,5 @@
 #include <animaGradientFileReader.h>
+#include <animaDTIEstimationImageFilter.h>
 #include <animaODFEstimatorCSDImageFilter.h>
 #include <animaReadWriteFunctions.h>
 
@@ -61,8 +62,10 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    using MainFilterType = anima::ODFEstimatorImageCSDFilter<double, double>;
-    using InputImageType = MainFilterType::TInputImage;
+    using MainFilterType = anima::ODFEstimatorCSDImageFilter<double, double>;
+    using DTIFilterType = anima::DTIEstimationImageFilter<double, double>;
+    using FAFilterType = anima::DTIScalarMapsImageFilter<3>;
+    using InputImageType = MainFilterType::Input3DImageType;
 
     MainFilterType::Pointer mainFilter = MainFilterType::New();
     mainFilter->SetLambda(lambdaArg.getValue());
@@ -71,26 +74,48 @@ int main(int argc, char **argv)
         mainFilter->SetLOrder(orderArg.getValue());
     else
         mainFilter->SetLOrder(orderArg.getValue() - 1);
-
+    mainFilter->SetBValueShellSelected(selectedBvalArg.getValue());
+    mainFilter->SetNumberOfWorkUnits(nbpArg.getValue());
     anima::setMultipleImageFilterInputsFromFileName<InputImageType, MainFilterType>(inArg.getValue(), mainFilter);
+
+
+    DTIFilterType::Pointer dtiFilter = DTIFilterType::New();
+    anima::setMultipleImageFilterInputsFromFileName<InputImageType, DTIFilterType>(inArg.getValue(), dtiFilter);
 
     using GFReaderType = anima::GradientFileReader<std::vector<double>, double>;
     GFReaderType gfReader;
     gfReader.SetGradientFileName(gradArg.getValue());
     gfReader.SetBValueBaseString(bvalArg.getValue());
     gfReader.SetGradientIndependentNormalization(bvalueScaleArg.isSet());
+    gfReader.Update();
+
+    //DTI filter needs gradient directions and bvalues as they are in the input files (see animaDTIEstimator implementation)
+    GFReaderType::GradientVectorType directions = gfReader.GetGradients();
+    GFReaderType::BValueVectorType mb = gfReader.GetBValues();
+    for (unsigned int i = 0; i < directions.size(); ++i)
+        dtiFilter->AddGradientDirection(i, directions[i]);
+    dtiFilter->SetBValuesList(mb);
+    dtiFilter->SetNumberOfWorkUnits(nbpArg.getValue());
+    dtiFilter->Update();
+    mainFilter->SetDtiImage(dtiFilter->GetOutput());
+
+
+    FAFilterType::Pointer faFilter = FAFilterType::New();
+    faFilter->SetInput(mainFilter->GetDtiImage());
+    faFilter->SetNumberOfWorkUnits(nbpArg.getValue());
+    faFilter->Update();
+    mainFilter->SetFaImage(faFilter->GetOutput());
+
+
+    //here, we want to set every gradient with bvalue<=10 to null vector and the associated bvalue to 0
     gfReader.SetB0ValueThreshold(10);
     gfReader.Update();
 
-    GFReaderType::GradientVectorType directions = gfReader.GetGradients();
-    GFReaderType::BValueVectorType mb = gfReader.GetBValues();
-
+    directions = gfReader.GetGradients();
+    mb = gfReader.GetBValues();
     for (unsigned int i = 0; i < directions.size(); ++i)
         mainFilter->AddGradientDirection(i, directions[i]);
-
     mainFilter->SetBValuesList(mb);
-    mainFilter->SetBValueShellSelected(selectedBvalArg.getValue());
-    mainFilter->SetNumberOfWorkUnits(nbpArg.getValue());
 
     itk::TimeProbe tmpTime;
     tmpTime.Start();
@@ -99,7 +124,7 @@ int main(int argc, char **argv)
 
     std::cout << "\nExecution Time: " << tmpTime.GetTotal() << "s" << std::endl;
 
-    anima::writeImage<MainFilterType::TOutputImage>(resArg.getValue(), mainFilter->GetOutput());
+    //anima::writeImage<MainFilterType::OutputVectorImageType>(resArg.getValue(), mainFilter->GetOutput());
 
     return EXIT_SUCCESS;
 }

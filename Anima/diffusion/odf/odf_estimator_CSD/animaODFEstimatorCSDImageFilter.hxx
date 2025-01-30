@@ -1,9 +1,9 @@
 #pragma once
 
 #include <animaVectorOperations.h>
-
-#include "animaODFEstimatorCSDImageFilter.h"
 #include <animaODFSphericalHarmonicBasis.h>
+#include "animaODFEstimatorCSDImageFilter.h"
+#include <animaDTIScalarMapsImageFilter.h>
 
 #include <itkImageRegionConstIterator.h>
 #include <itkImageRegionIterator.h>
@@ -34,7 +34,7 @@ namespace anima
 
     template <typename TInputPixelType, typename TOutputPixelType>
     void
-    ODFEstimatorImageFilter<TInputPixelType, TOutputPixelType>::AddGradientDirection(unsigned int i, std::vector<double> &grad)
+    ODFEstimatorCSDImageFilter<TInputPixelType, TOutputPixelType>::AddGradientDirection(unsigned int i, std::vector<double> &grad)
     {
         if (isZero(grad))
         {
@@ -50,9 +50,18 @@ namespace anima
         }
     }
 
+
     template <typename TInputPixelType, typename TOutputPixelType>
     void
-    ODFEstimatorImageFilter<TInputPixelType, TOutputPixelType>::GenerateOutputInformation()
+    ODFEstimatorCSDImageFilter<TInputPixelType, TOutputPixelType>::GenerateInitialResponseFunction(unsigned int vectorLength)
+    {
+        m_ResponseFunction.set_size(vectorLength, vectorLength);   
+    }
+
+
+    template <typename TInputPixelType, typename TOutputPixelType>
+    void
+    ODFEstimatorCSDImageFilter<TInputPixelType, TOutputPixelType>::GenerateOutputInformation()
     {
         // Override the method in itkImageSource, so we can set the vector length of
         // the output itk::VectorImage
@@ -64,28 +73,25 @@ namespace anima
         output->SetVectorLength(vectorLength);
     }
 
+
     template <typename TInputPixelType, typename TOutputPixelType>
     void
-    ODFEstimatorImageFilter<TInputPixelType, TOutputPixelType>::BeforeThreadedGenerateData()
+    ODFEstimatorCSDImageFilter<TInputPixelType, TOutputPixelType>::BeforeThreadedGenerateData()
     {
         unsigned int vectorLength = (m_LOrder + 1) * (m_LOrder + 2) / 2;
         unsigned int numGrads = m_GradientDirections.size();
 
+        //Compute kept gradients
         if ((m_GradientIndexes.size() + m_B0Indexes.size()) != this->GetNumberOfIndexedInputs())
             throw itk::ExceptionObject(__FILE__, __LINE__, "Number of gradient directions different from number of inputs", ITK_LOCATION);
-
-        if (m_UseAganjEstimation)
-        {
-            m_Normalize = false;
-            m_Sharpen = false;
-        }
 
         if (m_BValueShellSelected < 0)
             m_BValueShellSelected = m_BValuesList[m_GradientIndexes[0]];
 
         std::vector<unsigned int> bvalKeptIndexes;
         std::vector<std::vector<double>> keptGradients;
-        // First filter out unwanted b-values (keeping only b = m_BValueShellSelected)
+
+        //filter out unwanted b-values (keeping only b = m_BValueShellSelected)
         for (unsigned int i = 0; i < numGrads; ++i)
         {
             if ((m_BValuesList[m_GradientIndexes[i]] >= m_BValueShellSelected - m_BValueShellTolerance) &&
@@ -102,6 +108,28 @@ namespace anima
 
         std::cout << "Running ODF estimation using " << m_B0Indexes.size() << " B0 images and " << numGrads << " gradient images with b-value at " << m_BValueShellSelected << "s.mm^-2" << std::endl;
 
+        // Compute TMatrix 
+        unsigned int posValue = 0;
+        m_BMatrix.set_size(numGrads, vectorLength);
+
+        anima::ODFSphericalHarmonicBasis tmpBasis(m_LOrder);
+
+        for (unsigned int i = 0; i < numGrads; ++i)
+        {
+            posValue = 0;
+            for (int l = 0; l <= (int)m_LOrder; l += 2)
+                for (int m = -l; m <= l; ++m)
+                {
+                    m_BMatrix(i, posValue) = tmpBasis.getNthSHValueAtPosition(l, m, m_GradientDirections[i][0], m_GradientDirections[i][1]);
+                    ++posValue;
+                }
+        }
+
+        m_ResponseFunction = GenerateInitialResponseFunction();
+
+        
+
+    /*
         m_EstimatedVarianceImage = OutputScalarImageType::New();
         m_EstimatedVarianceImage->Initialize();
         m_EstimatedVarianceImage->SetOrigin(this->GetOutput()->GetOrigin());
@@ -131,13 +159,21 @@ namespace anima
         for (unsigned int i = 0; i < numGrads; ++i)
         {
             posValue = 0;
-            for (int k = 0; k <= (int)m_LOrder; k += 2)
-                for (int m = -k; m <= k; ++m)
+            for (int l = 0; l <= (int)m_LOrder; l += 2)
+                for (int m = -l; m <= l; ++m)
                 {
-                    m_BMatrix(i, posValue) = tmpBasis.getNthSHValueAtPosition(k, m, m_GradientDirections[i][0], m_GradientDirections[i][1]);
+                    m_BMatrix(i, posValue) = tmpBasis.getNthSHValueAtPosition(l, m, m_GradientDirections[i][0], m_GradientDirections[i][1]);
                     ++posValue;
                 }
         }
+
+        vnl_matrix<double> tmpMat = m_BMatrix.transpose() * m_BMatrix;
+        vnl_matrix_inverse<double> tmpInv(tmpMat);
+        m_TMatrix = tmpInv.inverse() * m_BMatrix.transpose();
+
+
+
+
 
         std::vector<double> LVector(vectorLength, 0);
         m_PVector.resize(vectorLength);
@@ -261,34 +297,51 @@ namespace anima
         }
         else
             m_Normalize = false;
+            */
     }
+
 
     template <typename TInputPixelType, typename TOutputPixelType>
     void
-    ODFEstimatorImageFilter<TInputPixelType, TOutputPixelType>::DynamicThreadedGenerateData(const OutputImageRegionType &outputRegionForThread)
+    ODFEstimatorCSDImageFilter<TInputPixelType, TOutputPixelType>::DynamicThreadedGenerateData(const OutputImageRegionType &outputRegionForThread)
     {
-        typedef itk::ImageRegionConstIterator<TInputImage> InputIteratorType;
-        typedef itk::ImageRegionIterator<TOutputImage> OutputIteratorType;
-        typedef itk::ImageRegionIterator<OutputScalarImageType> OutputScalarIteratorType;
+        typedef itk::ImageRegionConstIterator<Input3DImageType> InputIteratorType;
+        typedef itk::ImageRegionIterator<OutputVectorImageType> OutputIteratorType;
+        //typedef itk::ImageRegionIterator<OutputScalarImageType> OutputScalarIteratorType;
 
         unsigned int vectorLength = (m_LOrder + 1) * (m_LOrder + 2) / 2;
         unsigned int numGrads = m_GradientIndexes.size();
         unsigned int numB0 = m_B0Indexes.size();
 
-        OutputIteratorType resIt(this->GetOutput(), outputRegionForThread);
-
         std::vector<InputIteratorType> diffusionIts(numGrads);
         std::vector<InputIteratorType> b0Its(numGrads);
+        std::vector<double> tmpData(numGrads, 0);
+        std::vector<double> signalSH(numGrads, 0);
         for (unsigned int i = 0; i < numGrads; ++i)
             diffusionIts[i] = InputIteratorType(this->GetInput(m_GradientIndexes[i]), outputRegionForThread);
         for (unsigned int i = 0; i < numB0; ++i)
             b0Its[i] = InputIteratorType(this->GetInput(m_B0Indexes[i]), outputRegionForThread);
 
+        for (unsigned int i = 0; i < numGrads; ++i)
+                tmpData[i] = diffusionIts[i].Get();
+                
+        for (unsigned int i = 0; i < vectorLength; ++i)
+            for (unsigned int j = 0; j < numGrads; ++j)
+                signalSH[i] += m_TMatrix(i, j) * tmpData[j];
+
+        OutputIteratorType resIt(this->GetOutput(), outputRegionForThread);
+
+
+
+        
+        /*
+        
+
         InputIteratorType refB0Itr;
         if (m_ReferenceB0Image.IsNotNull())
             refB0Itr = InputIteratorType(m_ReferenceB0Image, outputRegionForThread);
 
-        OutputScalarIteratorType varItr(m_EstimatedVarianceImage, outputRegionForThread);
+        //OutputScalarIteratorType varItr(m_EstimatedVarianceImage, outputRegionForThread);
         OutputScalarIteratorType outB0Itr(m_EstimatedB0Image, outputRegionForThread);
 
         itk::VariableLengthVector<TOutputPixelType> outputData(vectorLength);
@@ -424,6 +477,7 @@ namespace anima
             for (unsigned int i = 0; i < numB0; ++i)
                 ++b0Its[i];
         }
+        */
     }
 
 } // end of namespace anima

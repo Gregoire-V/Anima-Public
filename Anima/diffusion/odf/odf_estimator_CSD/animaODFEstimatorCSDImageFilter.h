@@ -11,16 +11,16 @@ namespace anima
 {
 
     template <typename TInputPixelType, typename TOutputPixelType>
-    class ODFEstimatorImageFilter : public itk::ImageToImageFilter<itk::Image<TInputPixelType, 3>, itk::VectorImage<TOutputPixelType, 3>>
+    class ODFEstimatorCSDImageFilter : public itk::ImageToImageFilter<itk::Image<TInputPixelType, 3>, itk::VectorImage<TOutputPixelType, 3>>
     {
     public:
         /** Standard class typedefs. */
-        typedef ODFEstimatorImageFilter Self;
+        typedef ODFEstimatorCSDImageFilter Self;
         typedef itk::Image<TInputPixelType, 3> Input3DImageType;
         typedef itk::Image<TInputPixelType, 4> Input4DImageType;
-        //typedef itk::Image<TOutputPixelType, 3> OutputScalarImageType;
+        typedef itk::Image<TOutputPixelType, 3> OutputScalarImageType;
         typedef itk::VectorImage<TOutputPixelType, 3> OutputVectorImageType;
-        typedef itk::ImageToImageFilter<TInputImage, TOutputImage> Superclass;
+        typedef itk::ImageToImageFilter<Input3DImageType, OutputVectorImageType> Superclass;
         typedef itk::SmartPointer<Self> Pointer;
         typedef itk::SmartPointer<const Self> ConstPointer;
 
@@ -28,29 +28,32 @@ namespace anima
         itkNewMacro(Self);
 
         /** Run-time type information (and related methods) */
-        itkTypeMacro(ODFEstimatorImageFilter, ImageToImageFilter);
+        itkTypeMacro(ODFEstimatorCSDImageFilter, ImageToImageFilter);
 
         typedef typename Input3DImageType::Pointer InputImagePointer;
         typedef typename OutputVectorImageType::Pointer OutputImagePointer;
-        //typedef typename OutputScalarImageType::Pointer OutputScalarImagePointer;
+        typedef typename OutputScalarImageType::Pointer OutputScalarImagePointer;
 
         /** Superclass typedefs. */
         typedef typename Superclass::OutputImageRegionType OutputImageRegionType;
 
         void AddGradientDirection(unsigned int i, std::vector<double> &grad);
         void SetBValuesList(std::vector<double> bValuesList) { m_BValuesList = bValuesList; }
-        itkSetMacro(BValueShellSelected, int);
+        OutputVectorImageType GetDtiImage() { return m_DtiImage; }
+        void SetDtiImage(OutputVectorImageType dtiImage) { m_DtiImage = dtiImage; }
+        void SetFaImage(OutputScalarImageType faImage) { m_FaImage = faImage; }
 
+        itkSetMacro(BValueShellSelected, int);
         itkSetMacro(Lambda, double);
         itkSetMacro(Tau, double);
         itkSetMacro(LOrder, unsigned int);
 
 
     protected:
-        ODFEstimatorImageFilter()
+        ODFEstimatorCSDImageFilter()
         {
             m_GradientDirections.clear();
-            m_PVector.clear();
+            //m_PVector.clear();
             m_ReferenceB0Image = nullptr;
 
             m_BValueShellSelected = -1;
@@ -62,14 +65,15 @@ namespace anima
             m_SphereSHSampling.clear();
         }
 
-        virtual ~ODFEstimatorImageFilter() {}
+        virtual ~ODFEstimatorCSDImageFilter() {}
 
         void GenerateOutputInformation() override;
         void BeforeThreadedGenerateData() override;
         void DynamicThreadedGenerateData(const OutputImageRegionType &outputRegionForThread) override;
+        void GenerateInitialResponseFunction(unsigned int vectorLength);
 
     private:
-        ITK_DISALLOW_COPY_AND_ASSIGN(ODFEstimatorImageFilter);
+        ITK_DISALLOW_COPY_AND_ASSIGN(ODFEstimatorCSDImageFilter);
 
         std::vector<std::vector<double>> m_GradientDirections;
         std::vector<double> m_BValuesList;
@@ -78,14 +82,16 @@ namespace anima
         OutputScalarImagePointer m_EstimatedVarianceImage;
         OutputScalarImagePointer m_EstimatedB0Image;
 
+        OutputVectorImageType m_DtiImage;
+        OutputScalarImageType m_FaImage;
+
         int m_BValueShellSelected;
         double m_BValueShellTolerance;
         std::vector<unsigned int> m_SelectedDWIIndexes;
 
         vnl_matrix<double> m_TMatrix; // evaluation matrix computed once and for all before threaded generate data
         vnl_matrix<double> m_BMatrix;
-        std::vector<double> m_DeconvolutionVector;
-        std::vector<double> m_PVector;
+        vnl_matrix<double> m_ResponseFunction;
 
         std::vector<unsigned int> m_B0Indexes, m_GradientIndexes;
 
@@ -94,7 +100,7 @@ namespace anima
         std::vector<std::vector<double>> m_SphereSHSampling;
 
         double m_Lambda;
-        double m_Tau
+        double m_Tau;
         unsigned int m_LOrder;
     };
 

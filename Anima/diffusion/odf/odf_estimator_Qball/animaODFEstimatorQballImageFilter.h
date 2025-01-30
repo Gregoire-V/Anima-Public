@@ -11,11 +11,11 @@ namespace anima
 {
 
     template <typename TInputPixelType, typename TOutputPixelType>
-    class ODFEstimatorImageFilter : public itk::ImageToImageFilter<itk::Image<TInputPixelType, 3>, itk::VectorImage<TOutputPixelType, 3>>
+    class ODFEstimatorQballImageFilter : public itk::ImageToImageFilter<itk::Image<TInputPixelType, 3>, itk::VectorImage<TOutputPixelType, 3>>
     {
     public:
         /** Standard class typedefs. */
-        typedef ODFEstimatorImageFilter Self;
+        typedef ODFEstimatorQballImageFilter Self;
         typedef itk::Image<TInputPixelType, 3> TInputImage;
         typedef itk::Image<TInputPixelType, 4> Image4DType;
         typedef itk::Image<TOutputPixelType, 3> OutputScalarImageType;
@@ -28,7 +28,7 @@ namespace anima
         itkNewMacro(Self);
 
         /** Run-time type information (and related methods) */
-        itkTypeMacro(ODFEstimatorImageFilter, ImageToImageFilter);
+        itkTypeMacro(ODFEstimatorQballImageFilter, ImageToImageFilter);
 
         typedef typename TInputImage::Pointer InputImagePointer;
         typedef typename TOutputImage::Pointer OutputImagePointer;
@@ -62,7 +62,7 @@ namespace anima
         }
 
     protected:
-        ODFEstimatorImageFilter()
+        ODFEstimatorQballImageFilter()
         {
             m_GradientDirections.clear();
             m_PVector.clear();
@@ -85,14 +85,14 @@ namespace anima
             m_UseAganjEstimation = false;
         }
 
-        virtual ~ODFEstimatorImageFilter() {}
+        virtual ~ODFEstimatorQballImageFilter() {}
 
         void GenerateOutputInformation() ITK_OVERRIDE;
         void BeforeThreadedGenerateData() ITK_OVERRIDE;
         void DynamicThreadedGenerateData(const OutputImageRegionType &outputRegionForThread) ITK_OVERRIDE;
 
     private:
-        ITK_DISALLOW_COPY_AND_ASSIGN(ODFEstimatorImageFilter);
+        ITK_DISALLOW_COPY_AND_ASSIGN(ODFEstimatorQballImageFilter);
 
         bool isZero(std::vector<double> &testVal)
         {
@@ -141,4 +141,4 @@ namespace anima
 
 } // end of namespace anima
 
-#include "animaODFEstimatorImageFilter.hxx"
+#include "animaODFEstimatorQballImageFilter.hxx"

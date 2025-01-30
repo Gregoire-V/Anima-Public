@@ -18,7 +18,7 @@ namespace anima
 
     template <typename TInputPixelType, typename TOutputPixelType>
     void
-    ODFEstimatorImageFilter<TInputPixelType, TOutputPixelType>::AddGradientDirection(unsigned int i, std::vector<double> &grad)
+    ODFEstimatorQballImageFilter<TInputPixelType, TOutputPixelType>::AddGradientDirection(unsigned int i, std::vector<double> &grad)
     {
         if (isZero(grad))
         {
@@ -35,7 +35,7 @@ namespace anima
 
     template <typename TInputPixelType, typename TOutputPixelType>
     void
-    ODFEstimatorImageFilter<TInputPixelType, TOutputPixelType>::GenerateOutputInformation()
+    ODFEstimatorQballImageFilter<TInputPixelType, TOutputPixelType>::GenerateOutputInformation()
     {
         // Override the method in itkImageSource, so we can set the vector length of
         // the output itk::VectorImage
@@ -49,7 +49,7 @@ namespace anima
 
     template <typename TInputPixelType, typename TOutputPixelType>
     void
-    ODFEstimatorImageFilter<TInputPixelType, TOutputPixelType>::BeforeThreadedGenerateData()
+    ODFEstimatorQballImageFilter<TInputPixelType, TOutputPixelType>::BeforeThreadedGenerateData()
     {
         unsigned int vectorLength = (m_LOrder + 1) * (m_LOrder + 2) / 2;
         unsigned int numGrads = m_GradientDirections.size();
@@ -248,7 +248,7 @@ namespace anima
 
     template <typename TInputPixelType, typename TOutputPixelType>
     void
-    ODFEstimatorImageFilter<TInputPixelType, TOutputPixelType>::DynamicThreadedGenerateData(const OutputImageRegionType &outputRegionForThread)
+    ODFEstimatorQballImageFilter<TInputPixelType, TOutputPixelType>::DynamicThreadedGenerateData(const OutputImageRegionType &outputRegionForThread)
     {
         typedef itk::ImageRegionConstIterator<TInputImage> InputIteratorType;
         typedef itk::ImageRegionIterator<TOutputImage> OutputIteratorType;

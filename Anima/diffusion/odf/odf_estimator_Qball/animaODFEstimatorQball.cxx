@@ -95,7 +95,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    using MainFilterType = anima::ODFEstimatorImageFilter<double, double>;
+    using MainFilterType = anima::ODFEstimatorQballImageFilter<double, double>;
     using InputImageType = MainFilterType::TInputImage;
 
     MainFilterType::Pointer mainFilter = MainFilterType::New();
