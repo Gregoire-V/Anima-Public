@@ -14,7 +14,7 @@
 #include <fstream>
 
 
-bool isZero(std::vector<double> &testVal)
+bool isZero(vnl_vector_fixed<double,3> &testVal)
 {
     bool resVal = true;
     for (unsigned int i = 0; i < testVal.size(); ++i)
@@ -34,7 +34,7 @@ namespace anima
 
     template <typename TInputPixelType, typename TOutputPixelType>
     void
-    ODFEstimatorCSDImageFilter<TInputPixelType, TOutputPixelType>::AddGradientDirection(unsigned int i, std::vector<double> &grad)
+    ODFEstimatorCSDImageFilter<TInputPixelType, TOutputPixelType>::AddGradientDirection(unsigned int i, vnl_vector_fixed<double,3> &grad)
     {
         if (isZero(grad))
         {
@@ -44,7 +44,7 @@ namespace anima
         {
             m_GradientIndexes.push_back(i);
 
-            std::vector<double> sphericalCoords;
+            vnl_vector_fixed<double,3> sphericalCoords;
             anima::TransformCartesianToSphericalCoordinates(grad, sphericalCoords);
             m_GradientDirections.push_back(sphericalCoords);
         }
@@ -55,7 +55,9 @@ namespace anima
     void
     ODFEstimatorCSDImageFilter<TInputPixelType, TOutputPixelType>::GenerateInitialResponseFunction(unsigned int vectorLength)
     {
-        m_ResponseFunction.set_size(vectorLength, vectorLength);   
+        m_ResponseFunction.set_size(vectorLength, vectorLength);
+        
+           
     }
 
 
@@ -89,7 +91,7 @@ namespace anima
             m_BValueShellSelected = m_BValuesList[m_GradientIndexes[0]];
 
         std::vector<unsigned int> bvalKeptIndexes;
-        std::vector<std::vector<double>> keptGradients;
+        std::vector<vnl_vector_fixed<double,3>> keptGradients;
 
         //filter out unwanted b-values (keeping only b = m_BValueShellSelected)
         for (unsigned int i = 0; i < numGrads; ++i)
@@ -125,7 +127,12 @@ namespace anima
                 }
         }
 
-        m_ResponseFunction = GenerateInitialResponseFunction();
+        vnl_matrix<double> tmpMat = m_BMatrix.transpose() * m_BMatrix;
+        vnl_matrix_inverse<double> tmpInv(tmpMat);
+        m_TMatrix = tmpInv.inverse() * m_BMatrix.transpose();
+
+
+        GenerateInitialResponseFunction(m_LOrder);
 
         
 
@@ -316,20 +323,38 @@ namespace anima
         std::vector<InputIteratorType> diffusionIts(numGrads);
         std::vector<InputIteratorType> b0Its(numGrads);
         std::vector<double> tmpData(numGrads, 0);
-        std::vector<double> signalSH(numGrads, 0);
+        std::vector<double> signalSH(vectorLength, 0);
+        itk::VariableLengthVector<TOutputPixelType> outputValue(vectorLength);
         for (unsigned int i = 0; i < numGrads; ++i)
             diffusionIts[i] = InputIteratorType(this->GetInput(m_GradientIndexes[i]), outputRegionForThread);
         for (unsigned int i = 0; i < numB0; ++i)
             b0Its[i] = InputIteratorType(this->GetInput(m_B0Indexes[i]), outputRegionForThread);
+        OutputIteratorType resIt(this->GetOutput(), outputRegionForThread);
 
-        for (unsigned int i = 0; i < numGrads; ++i)
+        while (!diffusionIts[0].IsAtEnd()){
+            for (unsigned int i = 0; i < numGrads; ++i)
                 tmpData[i] = diffusionIts[i].Get();
                 
-        for (unsigned int i = 0; i < vectorLength; ++i)
-            for (unsigned int j = 0; j < numGrads; ++j)
-                signalSH[i] += m_TMatrix(i, j) * tmpData[j];
+            for (unsigned int i = 0; i < vectorLength; ++i)
+                for (unsigned int j = 0; j < numGrads; ++j)
+                    signalSH[i] += m_TMatrix(i, j) * tmpData[j];
 
-        OutputIteratorType resIt(this->GetOutput(), outputRegionForThread);
+            for (unsigned int i = 0; i < vectorLength; i++){
+                outputValue[i] = signalSH[i];
+            }
+            
+            //fake output value, just to check that what we have done for now works
+            resIt.Set(outputValue);
+            
+            for (unsigned int i = 0; i < numGrads; ++i)
+                ++diffusionIts[i];
+            
+            ++resIt;
+        }
+        
+            
+
+            
 
 
 

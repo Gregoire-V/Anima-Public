@@ -23,7 +23,7 @@ add_executable(${PROJECT_NAME}
 ## Link
 ## #############################################################################
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} ${NLOPT_LIBRARY}
   ${ITKIO_LIBRARIES}
   AnimaSHTools
   )

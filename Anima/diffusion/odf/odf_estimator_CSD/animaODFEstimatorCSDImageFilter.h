@@ -31,17 +31,17 @@ namespace anima
         itkTypeMacro(ODFEstimatorCSDImageFilter, ImageToImageFilter);
 
         typedef typename Input3DImageType::Pointer InputImagePointer;
-        typedef typename OutputVectorImageType::Pointer OutputImagePointer;
+        typedef typename OutputVectorImageType::Pointer OutputVectorImagePointer;
         typedef typename OutputScalarImageType::Pointer OutputScalarImagePointer;
 
         /** Superclass typedefs. */
         typedef typename Superclass::OutputImageRegionType OutputImageRegionType;
 
-        void AddGradientDirection(unsigned int i, std::vector<double> &grad);
+        void AddGradientDirection(unsigned int i, vnl_vector_fixed<double,3> &grad);
         void SetBValuesList(std::vector<double> bValuesList) { m_BValuesList = bValuesList; }
-        OutputVectorImageType GetDtiImage() { return m_DtiImage; }
-        void SetDtiImage(OutputVectorImageType dtiImage) { m_DtiImage = dtiImage; }
-        void SetFaImage(OutputScalarImageType faImage) { m_FaImage = faImage; }
+        OutputVectorImagePointer GetDtiImage() { return m_DtiImage; }
+        void SetDtiImage(OutputVectorImagePointer dtiImage) { m_DtiImage = dtiImage; }
+        void SetFaImage(OutputScalarImagePointer faImage) { m_FaImage = faImage; }
 
         itkSetMacro(BValueShellSelected, int);
         itkSetMacro(Lambda, double);
@@ -75,15 +75,15 @@ namespace anima
     private:
         ITK_DISALLOW_COPY_AND_ASSIGN(ODFEstimatorCSDImageFilter);
 
-        std::vector<std::vector<double>> m_GradientDirections;
+        std::vector<vnl_vector_fixed<double,3>> m_GradientDirections;
         std::vector<double> m_BValuesList;
         InputImagePointer m_ReferenceB0Image;
 
         OutputScalarImagePointer m_EstimatedVarianceImage;
         OutputScalarImagePointer m_EstimatedB0Image;
 
-        OutputVectorImageType m_DtiImage;
-        OutputScalarImageType m_FaImage;
+        OutputVectorImagePointer m_DtiImage;
+        OutputScalarImagePointer m_FaImage;
 
         int m_BValueShellSelected;
         double m_BValueShellTolerance;

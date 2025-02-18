@@ -76,13 +76,15 @@ int main(int argc, char **argv)
         mainFilter->SetLOrder(orderArg.getValue() - 1);
     mainFilter->SetBValueShellSelected(selectedBvalArg.getValue());
     mainFilter->SetNumberOfWorkUnits(nbpArg.getValue());
-    anima::setMultipleImageFilterInputsFromFileName<InputImageType, MainFilterType>(inArg.getValue(), mainFilter);
-
+    int nbPats = anima::setMultipleImageFilterInputsFromFileName<InputImageType, MainFilterType>(inArg.getValue(), mainFilter);
 
     DTIFilterType::Pointer dtiFilter = DTIFilterType::New();
-    anima::setMultipleImageFilterInputsFromFileName<InputImageType, DTIFilterType>(inArg.getValue(), dtiFilter);
+    for (int i = 0; i < nbPats; i++){
+        dtiFilter->SetInput(i, mainFilter->GetInput(i));
+    }
+    //anima::setMultipleImageFilterInputsFromFileName<InputImageType, DTIFilterType>(inArg.getValue(), dtiFilter);
 
-    using GFReaderType = anima::GradientFileReader<std::vector<double>, double>;
+    using GFReaderType = anima::GradientFileReader<vnl_vector_fixed<double,3>, double>;
     GFReaderType gfReader;
     gfReader.SetGradientFileName(gradArg.getValue());
     gfReader.SetBValueBaseString(bvalArg.getValue());
@@ -99,13 +101,11 @@ int main(int argc, char **argv)
     dtiFilter->Update();
     mainFilter->SetDtiImage(dtiFilter->GetOutput());
 
-
     FAFilterType::Pointer faFilter = FAFilterType::New();
     faFilter->SetInput(mainFilter->GetDtiImage());
     faFilter->SetNumberOfWorkUnits(nbpArg.getValue());
     faFilter->Update();
     mainFilter->SetFaImage(faFilter->GetOutput());
-
 
     //here, we want to set every gradient with bvalue<=10 to null vector and the associated bvalue to 0
     gfReader.SetB0ValueThreshold(10);
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 
     std::cout << "\nExecution Time: " << tmpTime.GetTotal() << "s" << std::endl;
 
-    //anima::writeImage<MainFilterType::OutputVectorImageType>(resArg.getValue(), mainFilter->GetOutput());
+    anima::writeImage<MainFilterType::OutputVectorImageType>(resArg.getValue(), mainFilter->GetOutput());
 
     return EXIT_SUCCESS;
 }
