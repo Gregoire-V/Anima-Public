@@ -7,12 +7,14 @@
 
 #include <itkImageRegionConstIterator.h>
 #include <itkImageRegionIterator.h>
+#include <itkSymmetricEigenAnalysis.h>
 
 #include <boost/math/special_functions/legendre.hpp>
 
 #include <cmath>
 #include <fstream>
 #include <set>
+
 
 bool isZero(vnl_vector_fixed<double,3> &testVal)
 {
@@ -70,6 +72,32 @@ namespace anima
         }
 
         std::set<VoxelDTIDescriptor, DTIDescriptorComparator> highestFaVoxels;
+        
+        
+        itk::ImageRegionConstIterator<OutputVectorImagePointer> dtiIterator (m_DtiImage, outputRegionForThread);
+        OutputVectorImagePixelType tensorVoxel;
+        vnl_matrix<double> tensorSymMatrix;
+        vnl_matrix<double> eigenVectors(3,3);
+        itk::Vector<double,3> eigenValues;
+        
+        while (!dtiIterator.isAtEnd()){
+            tensorVoxel=dtiIterator.Get();
+            anima::GetTensorFromVectorRepresentation(tensorVoxel, tensorSymMatrix, 3);
+            itk::SymmetricEigenAnalysis<vnl_matrix<double>, itk::Vector<double, 3>> eigenAnalysis;
+            eigenAnalysis.SetDimension(3);
+            eigenAnalysis.ComputeEigenValuesAndVectors(tensorSymMatrix, eigenValues, eigenVectors);
+            double fa;
+            double l1(eigenValues[2]),l2(eigenValues[1]),l3(eigenValues[0]);
+            double num = std::sqrt ((l1 -l2) * (l1 -l2) + (l2 -l3) * (l2 -l3) + (l3 - l1) * (l3 - l1));
+            double den = std::sqrt (l1*l1 + l2*l2 + l3*l3);
+            if (den == 0)
+                fa = 0;
+            else
+                fa = std::sqrt(0.5) * (num / den);
+
+
+        }
+        
         
 
         m_ResponseFunction.set_size(vectorLength, vectorLength);
