@@ -12,7 +12,7 @@
 
 #include <cmath>
 #include <fstream>
-
+#include <set>
 
 bool isZero(vnl_vector_fixed<double,3> &testVal)
 {
@@ -55,6 +55,23 @@ namespace anima
     void
     ODFEstimatorCSDImageFilter<TInputPixelType, TOutputPixelType>::GenerateInitialResponseFunction(unsigned int vectorLength)
     {
+        typedef struct {
+            int index;
+            double faValue;
+            double thetaAngle; 
+            double phiAngle; //azimuth angle
+        } VoxelDTIDescriptor;
+
+        struct DTIDescriptorComparator {
+            bool operator()(VoxelDTIDescriptor v1, VoxelDTIDescriptor v2) const
+            {
+                return v1.faValue < v2.faValue;
+            }
+        }
+
+        std::set<VoxelDTIDescriptor, DTIDescriptorComparator> highestFaVoxels;
+        
+
         m_ResponseFunction.set_size(vectorLength, vectorLength);
         
            

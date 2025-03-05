@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     faFilter->SetInput(mainFilter->GetDtiImage());
     faFilter->SetNumberOfWorkUnits(nbpArg.getValue());
     faFilter->Update();
-    mainFilter->SetFaImage(faFilter->GetOutput());
+    mainFilter->SetFaImage(faFilter->GetFAImage());
 
     //here, we want to set every gradient with bvalue<=10 to null vector and the associated bvalue to 0
     gfReader.SetB0ValueThreshold(10);
