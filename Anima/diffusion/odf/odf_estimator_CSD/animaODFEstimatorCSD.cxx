@@ -99,7 +99,7 @@ int main(int argc, char **argv)
     dtiFilter->SetBValuesList(mb);
     dtiFilter->SetNumberOfWorkUnits(nbpArg.getValue());
     dtiFilter->Update();
-    mainFilter->SetDtiImage(dtiFilter->GetOutput());
+    mainFilter->SetDtiImage(*dtiFilter->GetOutput());
 
     FAFilterType::Pointer faFilter = FAFilterType::New();
     faFilter->SetInput(mainFilter->GetDtiImage());

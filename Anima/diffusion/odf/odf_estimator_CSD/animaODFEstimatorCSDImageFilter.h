@@ -20,6 +20,7 @@ namespace anima
         typedef itk::Image<TInputPixelType, 4> Input4DImageType;
         typedef itk::Image<TOutputPixelType, 3> OutputScalarImageType;
         typedef itk::VectorImage<TOutputPixelType, 3> OutputVectorImageType;
+        typedef itk::VectorImage<double, 3> TensorImageType;
         typedef itk::ImageToImageFilter<Input3DImageType, OutputVectorImageType> Superclass;
         typedef itk::SmartPointer<Self> Pointer;
         typedef itk::SmartPointer<const Self> ConstPointer;
@@ -82,8 +83,8 @@ namespace anima
         OutputScalarImagePointer m_EstimatedVarianceImage;
         OutputScalarImagePointer m_EstimatedB0Image;
 
-        OutputVectorImagePointer m_DtiImage;
-        OutputScalarImagePointer m_FaImage;
+        TensorImageType m_DtiImage;
+        //OutputScalarImagePointer m_FaImage;
 
         int m_BValueShellSelected;
         double m_BValueShellTolerance;

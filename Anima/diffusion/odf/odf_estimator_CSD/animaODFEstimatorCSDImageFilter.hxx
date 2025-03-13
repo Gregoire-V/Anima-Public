@@ -74,20 +74,21 @@ namespace anima
         std::set<VoxelDTIDescriptor, DTIDescriptorComparator> highestFaVoxels;
         
         
-        itk::ImageRegionConstIterator<OutputVectorImagePointer> dtiIterator (m_DtiImage, outputRegionForThread);
-        OutputVectorImagePixelType tensorVoxel;
-        vnl_matrix<double> tensorSymMatrix;
+        itk::ImageRegionConstIterator<TensorImageType> dtiIterator (m_DtiImage, outputRegionForThread);
+        TensorImageType::PixelType tensorVoxel;
+        itk::SymmetricEigenAnalysis<vnl_matrix<double>, itk::Vector<double, 3>> eigenAnalysis;
+        eigenAnalysis.SetDimension(3);
+        vnl_matrix<double> tensorSymMatrix(3,3);
         vnl_matrix<double> eigenVectors(3,3);
         itk::Vector<double,3> eigenValues;
         
         while (!dtiIterator.isAtEnd()){
             tensorVoxel=dtiIterator.Get();
             anima::GetTensorFromVectorRepresentation(tensorVoxel, tensorSymMatrix, 3);
-            itk::SymmetricEigenAnalysis<vnl_matrix<double>, itk::Vector<double, 3>> eigenAnalysis;
-            eigenAnalysis.SetDimension(3);
+            
             eigenAnalysis.ComputeEigenValuesAndVectors(tensorSymMatrix, eigenValues, eigenVectors);
             double fa;
-            double l1(eigenValues[2]),l2(eigenValues[1]),l3(eigenValues[0]);
+            double l1(eigenValues[2]), l2(eigenValues[1]), l3(eigenValues[0]);
             double num = std::sqrt ((l1 -l2) * (l1 -l2) + (l2 -l3) * (l2 -l3) + (l3 - l1) * (l3 - l1));
             double den = std::sqrt (l1*l1 + l2*l2 + l3*l3);
             if (den == 0)
