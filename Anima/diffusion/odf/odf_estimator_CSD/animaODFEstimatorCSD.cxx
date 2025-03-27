@@ -51,6 +51,10 @@ int main(int argc, char **argv)
         "T", "nb-threads",
         "An integer value specifying the number of threads to run on (default: all cores).",
         false, itk::MultiThreaderBase::GetGlobalDefaultNumberOfThreads(), "number of threads", cmd);
+    TCLAP::ValueArg<unsigned int> nbBestVoxel(
+        "n","nb-best",
+        "Number of voxels selected for response function estimation first step (with best FA values)",
+        false, 300, "unsigned int", cmd);
 
     try
     {
@@ -70,6 +74,7 @@ int main(int argc, char **argv)
     MainFilterType::Pointer mainFilter = MainFilterType::New();
     mainFilter->SetLambda(lambdaArg.getValue());
     mainFilter->SetTau(tauArg.getValue());
+    mainFilter->SetNbBestVoxel(nbBestVoxel.getValue());
     if (orderArg.getValue() % 2 == 0)
         mainFilter->SetLOrder(orderArg.getValue());
     else

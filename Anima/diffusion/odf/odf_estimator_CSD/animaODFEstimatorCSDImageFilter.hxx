@@ -81,6 +81,9 @@ namespace anima
         vnl_matrix<double> tensorSymMatrix(3,3);
         vnl_matrix<double> eigenVectors(3,3);
         itk::Vector<double,3> eigenValues;
+        VoxelDTIDescriptor voxelDescriptor;
+        vnl_matrix<double> rotationMatrixTheta;
+        vnl_matrix<double> rotationMatrixPhi;
         
         while (!dtiIterator.isAtEnd()){
             tensorVoxel=dtiIterator.Get();
@@ -95,16 +98,38 @@ namespace anima
                 fa = 0;
             else
                 fa = std::sqrt(0.5) * (num / den);
+            
+            if (dtiIterator.GetIndex()<m_nbBestVoxel){
+                voxelDescriptor.faValue=fa;
+                v1=eigenVectors[2];
+                anima::TransformCartesianToSphericalCoordinates(v1,v1);
+                voxelDescriptor.thetaAngle=v1[0];
+                voxelDescriptor.phiAngle=v1[1];
+                voxelDescriptor.index=dtiIterator.GetIndex();
+                highestFaVoxels.insert(voxelDescriptor);
+            }
+            else {
+                if (fa>highestFaVoxels[0].faValue){
+                    highestFaVoxels.erase(highestFaVoxels.begin());
+                    voxelDescriptor.faValue=fa;
+                    v1=eigenVectors[2];
+                    anima::TransformCartesianToSphericalCoordinates(v1,v1);
+                    voxelDescriptor.thetaAngle=v1[0];
+                    voxelDescriptor.phiAngle=v1[1];
+                    voxelDescriptor.index=dtiIterator.GetIndex();
+                    highestFaVoxels.insert(voxelDescriptor);
+                }
 
+            }
 
         }
         
-        
-
+        while
         m_ResponseFunction.set_size(vectorLength, vectorLength);
-        
-           
+
+
     }
+
 
 
     template <typename TInputPixelType, typename TOutputPixelType>

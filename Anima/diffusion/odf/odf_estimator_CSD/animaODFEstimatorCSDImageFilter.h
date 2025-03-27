@@ -20,7 +20,6 @@ namespace anima
         typedef itk::Image<TInputPixelType, 4> Input4DImageType;
         typedef itk::Image<TOutputPixelType, 3> OutputScalarImageType;
         typedef itk::VectorImage<TOutputPixelType, 3> OutputVectorImageType;
-        typedef itk::VectorImage<double, 3> TensorImageType;
         typedef itk::ImageToImageFilter<Input3DImageType, OutputVectorImageType> Superclass;
         typedef itk::SmartPointer<Self> Pointer;
         typedef itk::SmartPointer<const Self> ConstPointer;
@@ -34,6 +33,7 @@ namespace anima
         typedef typename Input3DImageType::Pointer InputImagePointer;
         typedef typename OutputVectorImageType::Pointer OutputVectorImagePointer;
         typedef typename OutputScalarImageType::Pointer OutputScalarImagePointer;
+        typedef typename OutputVectorImageType::PixelType OutputVectorImagePixelType;
 
         /** Superclass typedefs. */
         typedef typename Superclass::OutputImageRegionType OutputImageRegionType;
@@ -48,6 +48,7 @@ namespace anima
         itkSetMacro(Lambda, double);
         itkSetMacro(Tau, double);
         itkSetMacro(LOrder, unsigned int);
+        itkSetMacro(nbBestVoxel, unsigned int);
 
 
     protected:
@@ -83,8 +84,8 @@ namespace anima
         OutputScalarImagePointer m_EstimatedVarianceImage;
         OutputScalarImagePointer m_EstimatedB0Image;
 
-        TensorImageType m_DtiImage;
-        //OutputScalarImagePointer m_FaImage;
+        OutputVectorImagePointer m_DtiImage;
+        OutputScalarImagePointer m_FaImage;
 
         int m_BValueShellSelected;
         double m_BValueShellTolerance;
@@ -103,6 +104,7 @@ namespace anima
         double m_Lambda;
         double m_Tau;
         unsigned int m_LOrder;
+        unsigned int m_nbBestVoxel;
     };
 
 } // end of namespace anima
